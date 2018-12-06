@@ -1,0 +1,15 @@
+{
+  "name": "zmq-to-sse",
+  "version": "0.1.0",
+  "description": "ZeroMQ to SSE",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Nadav Ivgi",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4",
+    "morgan": "^1.9.1",
+    "zeromq": "^5.1.0"
+  }
+}
