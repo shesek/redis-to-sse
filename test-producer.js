@@ -1,7 +1,6 @@
-const zmq = require('zeromq').socket('pub')
-  .bindSync(process.env.ZMQ_URI || 'tcp://127.0.0.1:3000')
+const redis = require('redis').createClient(process.env.REDIS_URI)
 
-const topic = process.env.ZMQ_TOPIC
+const chan = process.env.PUB_CHANNEL
 
 let i = 0
-setInterval(_ => zmq.send([ topic, JSON.stringify({ foo: 'bar', i: ++i }) ]), 1000)
+setInterval(_ => redis.publish(chan, JSON.stringify({ foo: 'bar', i: ++i })), 1000)

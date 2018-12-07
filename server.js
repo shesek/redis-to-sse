@@ -1,11 +1,10 @@
-// Setup zmq subscriber
-const zmq = require('zeromq').socket('sub')
-  .connect(process.env.ZMQ_URI || 'tcp://127.0.0.1:3000')
-  .subscribe(process.env.ZMQ_TOPIC)
+// Setup redis
+const redis = require('redis').createClient(process.env.REDIS_URI)
+redis.subscribe(process.env.SUB_CHANNEL)
 
 // Log messages and number of SSE subscribers
-zmq.on('message', (topic, msg) => console.log(`Broadcasting ${topic}: ${msg}`))
-setInterval(_ => console.log(`Total subscribers: ${ zmq.listenerCount('message') - 1 }`), 60000)
+redis.on('message', (chan, msg) => console.log(`Broadcasting ${chan}: ${msg}`))
+setInterval(_ => console.log(`Total subscribers: ${ redis.listenerCount('message') - 1 }`), 60000)
 
 // Setup express server
 const app = require('express')()
@@ -23,18 +22,18 @@ app.get('/stream', (req, res) => {
   , 'Connection': 'keep-alive'
   }).flushHeaders()
 
-  function onMsg (topic, msg) {
-    res.write(`event:${topic}\ndata:`)
+  function onMsg (chan, msg) {
+    res.write(`event:${chan}\ndata:`)
     res.write(msg) // pass msg buffer through without serializing to string
     res.write('\n\n')
   }
-  zmq.on('message', onMsg)
+  redis.on('message', onMsg)
 
   const keepAlive = setInterval(_ => res.write(': keepalive\n\n'), 25000)
 
-  req.once('close', _ => (zmq.removeListener('message', onMsg)
-                        , clearInterval(keepAlive))
-                        , console.log('Subscriber disconnected'))
+  req.once('close', _ => (redis.removeListener('message', onMsg)
+                        , clearInterval(keepAlive)
+                        , console.log('Subscriber disconnected')))
 })
 
 app.listen(
