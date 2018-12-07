@@ -3,14 +3,19 @@ const zmq = require('zeromq').socket('sub')
   .connect(process.env.ZMQ_URI || 'tcp://127.0.0.1:3000')
   .subscribe(process.env.ZMQ_TOPIC)
 
+// Log messages and number of SSE subscribers
 zmq.on('message', (topic, msg) => console.log(`Broadcasting ${topic}: ${msg}`))
+setInterval(_ => console.log(`Total subscribers: ${ zmq.listenerCount('message') - 1 }`), 60000)
 
 // Setup express server
 const app = require('express')()
 app.set('trust proxy', process.env.PROXIED || 'loopback')
 app.use(require('morgan')('dev'))
 
+// SSE endpoint
 app.get('/stream', (req, res) => {
+  console.log('New subscriber')
+
   res.set({
     'X-Accel-Buffering': 'no'
   , 'Cache-Control': 'no-cache'
@@ -27,8 +32,9 @@ app.get('/stream', (req, res) => {
 
   const keepAlive = setInterval(_ => res.write(': keepalive\n\n'), 25000)
 
-  req.on('close', _ => (zmq.removeListener('message', onMsg)
-                      , clearInterval(keepAlive)))
+  req.once('close', _ => (zmq.removeListener('message', onMsg)
+                        , clearInterval(keepAlive))
+                        , console.log('Subscriber disconnected'))
 })
 
 app.listen(

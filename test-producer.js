@@ -4,6 +4,4 @@ const zmq = require('zeromq').socket('pub')
 const topic = process.env.ZMQ_TOPIC
 
 let i = 0
-setInterval(_ => {
-  zmq.send([ topic, JSON.stringify({ foo: 'bar', i: ++i }) ])
-}, 1000)
+setInterval(_ => zmq.send([ topic, JSON.stringify({ foo: 'bar', i: ++i }) ]), 1000)
