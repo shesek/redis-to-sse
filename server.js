@@ -28,9 +28,7 @@ app.get('/stream', (req, res) => {
 
   function onMsg (chan, msg) {
     if (!subscriptions || subscriptions.includes(chan)) {
-      res.write(`event:${chan}\ndata:`)
-      res.write(msg) // pass msg buffer through without serializing to string
-      res.write('\n\n')
+      res.write(`event:${chan}\ndata:${msg}\n\n`)
     }
   }
   redis.on('message', onMsg)
