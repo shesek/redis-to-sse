@@ -1,6 +1,11 @@
 // Setup redis
 const redis = require('redis').createClient(process.env.REDIS_URI)
-redis.subscribe(process.env.SUB_CHANNEL)
+var channels = process.env.SUB_CHANNELS.split(',');
+console.log(process.env.SUB_CHANNELS)
+for (var i = 0; i < channels.length; i++) {
+  console.log('subscribe: ' + channels[i])
+  redis.subscribe(channels[i])
+}
 
 // Log messages and number of SSE subscribers
 redis.on('message', (chan, msg) => console.log(`Broadcasting ${chan}: ${msg}`))
