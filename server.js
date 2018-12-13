@@ -1,11 +1,9 @@
 // Setup redis
 const redis = require('redis').createClient(process.env.REDIS_URI)
-var channels = process.env.SUB_CHANNELS.split(',');
-console.log(process.env.SUB_CHANNELS)
-for (var i = 0; i < channels.length; i++) {
-  console.log('subscribe: ' + channels[i])
-  redis.subscribe(channels[i])
-}
+    , channels = process.env.SUB_CHANNELS.split(',')
+
+console.log(`Subscribing to Redis on ${channels.join(',')}`)
+channels.forEach(chan => redis.subscribe(chan))
 
 // Log messages and number of SSE subscribers
 redis.on('message', (chan, msg) => console.log(`Broadcasting ${chan}: ${msg}`))
@@ -18,7 +16,8 @@ app.use(require('morgan')('dev'))
 
 // SSE endpoint
 app.get('/stream', (req, res) => {
-  console.log('New subscriber')
+  const subscriptions = req.query.channels && req.query.channels.split(',')
+  console.log(`New subscriber for ${ subscriptions ? subscriptions.join(',') : 'all channels' }`)
 
   res.set({
     'X-Accel-Buffering': 'no'
@@ -28,9 +27,11 @@ app.get('/stream', (req, res) => {
   }).flushHeaders()
 
   function onMsg (chan, msg) {
-    res.write(`event:${chan}\ndata:`)
-    res.write(msg) // pass msg buffer through without serializing to string
-    res.write('\n\n')
+    if (!subscriptions || subscriptions.includes(chan)) {
+      res.write(`event:${chan}\ndata:`)
+      res.write(msg) // pass msg buffer through without serializing to string
+      res.write('\n\n')
+    }
   }
   redis.on('message', onMsg)
 
